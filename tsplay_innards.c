@@ -54,6 +54,9 @@
 #include "tswrite_fns.h"
 #include "pidint_fns.h"
 
+// Remember continuity counter value for each/any PID
+static int continuity_counter[0x1fff+1] = {0};
+
 
 // ============================================================
 // Common TS packet reading code
@@ -511,11 +514,13 @@ static int play_TS_packets(TS_reader_p  tsreader,
                            int          max,
                            int          loop,
                            int          quiet,
-                           int          verbose)
+                           int          verbose,
+                           int          renumber)
 {
   int  err;
   int  total = 0;
   uint32_t count = 0;
+  int control;
   int  pcrs_used = 0;
   int  pcrs_ignored = 0;
   uint32_t pcr_pid = ~0U;
@@ -541,6 +546,8 @@ static int play_TS_packets(TS_reader_p  tsreader,
     if (loop)
       start_posn = start_count * TS_PACKET_SIZE;
   }
+
+  if (!quiet && renumber) fprint_msg("Renumbering of continuity_counter enabled.\n");
 
   count = start_count;
   for (;;)
@@ -609,6 +616,21 @@ static int play_TS_packets(TS_reader_p  tsreader,
       }
     }
 
+    if( renumber) {
+      // continuity_counter correction for non stuffing pids
+      if( pid != 0x1fff) {
+        // if not adaptation field eq 0 or 11)
+        control = data[3] & 0xf0;
+        if( (control & 0x30 ) == 0x00 || (control & 0x30 ) == 0x20) {
+          data[3] = control | continuity_counter[pid];
+        }
+        else {
+          continuity_counter[pid] = (continuity_counter[pid] + 1) & 0x0f;
+          data[3] = control | continuity_counter[pid];
+        }
+      }
+    }
+
     // And write it out via the circular buffer
     err = tswrite_write(tswriter,data,pid,got_pcr,pcr);
     if (err)
@@ -663,7 +685,8 @@ extern int play_TS_stream(int         input,
                           int         max,
                           int         loop,
                           int         quiet,
-                          int         verbose)
+                          int         verbose,
+                          int         renumber)
 {
   int  err;
   TS_reader_p  tsreader;
@@ -678,7 +701,7 @@ extern int play_TS_stream(int         input,
                                    override_pcr_pid,max,loop,quiet,verbose);
   else
     err = play_TS_packets(tsreader, tswriter, pace_mode, pid_to_ignore,
-                          max,loop,quiet,verbose);
+                          max,loop,quiet,verbose,renumber);
   if (err)
   {
     free_TS_reader(&tsreader);

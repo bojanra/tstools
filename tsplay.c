@@ -136,6 +136,8 @@ static void print_usage(int summary)
       "                    See -details for more information.\n"
       "  -loop             Play the input file repeatedly. Can be combined\n"
       "                    with -max.\n"
+      "  -renumber         Re-number the continuity counter. Usefull when running loop option.\n"
+      "                    Prevents having cc-error because of rewinding.\n"
       );
   else
     fprint_msg(
@@ -344,6 +346,7 @@ int main(int argc, char **argv)
   int    err = 0;
   int    ii = 1;
   int    loop = FALSE;
+  int    renumber = FALSE;
   time_t start,end;
   int    is_TS;   // Does it appear to be TS or PS?
 
@@ -655,6 +658,11 @@ int main(int argc, char **argv)
         if (err) return 1;
         ii++;
       }
+      else if (!strcmp("-renumber",argv[ii]))
+      {
+        renumber = TRUE;
+        ii++;
+      }
       else if (!strcmp("-drop",argv[ii]))
       {
         if (ii+2 >= argc)
@@ -834,7 +842,7 @@ int main(int argc, char **argv)
   if (is_TS)
   {
     err = play_TS_stream(input,tswriter,pace_mode,pid_to_ignore,
-                         override_pcr_pid,max,loop,quiet,verbose);
+                         override_pcr_pid,max,loop,quiet,verbose,renumber);
   }
   else
     err = play_PS_stream(input,tswriter,pad_start,

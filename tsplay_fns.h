@@ -55,6 +55,7 @@
  *   if applicable)
  * - if `quiet` is true, then only error messages should be written out
  * - if `verbose` is true, then give extra progress messages
+ * - if `renumber` is true, then continuity counter is renumbered
  *
  * Returns 0 if all went well, 1 if something went wrong.
  */
@@ -66,7 +67,8 @@ extern int play_TS_stream(int         input,
                           int         max,
                           int         loop,
                           int         quiet,
-                          int         verbose);
+                          int         verbose,
+                          int         renumber);
 
 /*
  * Read PS packets and then output them as TS.
