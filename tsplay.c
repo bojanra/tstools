@@ -661,7 +661,6 @@ int main(int argc, char **argv)
       else if (!strcmp("-renumber",argv[ii]))
       {
         renumber = TRUE;
-        ii++;
       }
       else if (!strcmp("-drop",argv[ii]))
       {
